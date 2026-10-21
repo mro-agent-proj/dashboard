@@ -14,7 +14,7 @@ const loading = ref(false);
 const error = ref('');
 const samples = [
   ['신고자', 'reporter1@kal.test'],
-  ['정비팀', 'hyd1@mro.test'],
+  ['정비팀', 'hyd@mro.test'],
   ['어드민', 'admin@mro.test']
 ];
 
