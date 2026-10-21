@@ -3,11 +3,13 @@ import ReporterDashboard from '../views/ReporterDashboard.vue';
 import MaintenanceDashboard from '../views/MaintenanceDashboard.vue';
 import AdminDashboard from '../views/AdminDashboard.vue';
 import LoginView from '../views/LoginView.vue';
+import SignupView from '../views/SignupView.vue';
 import { currentUser, homeForRole } from '../services/auth';
 
 const router = createRouter({ history:createWebHistory(), routes:[
   { path:'/', redirect:'/login' },
   { path:'/login', component:LoginView, meta:{ public:true } },
+  { path:'/signup', component:SignupView, meta:{ public:true } },
   { path:'/reporter', component:ReporterDashboard, meta:{ role:'REPORTER' } },
   { path:'/maintenance', component:MaintenanceDashboard, meta:{ role:'MAINTENANCE' } },
   { path:'/admin', component:AdminDashboard, meta:{ role:'ADMIN' } }

@@ -1,29 +1,44 @@
 <script setup lang="ts">
-import Button from 'primevue/button';
-import { useRouter } from 'vue-router';
+import { computed } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { currentUser, homeForRole, signOut } from '../services/auth';
-const router=useRouter();
-const nav=[{to:'/reporter',icon:'pi-file-edit',label:'정비 요청'},{to:'/maintenance',icon:'pi-inbox',label:'배정 요청'},{to:'/admin',icon:'pi-list-check',label:'요청 관리'}];
+import { roleLabel, useAirlines, useDepartments } from '../services/labels';
+
+const router = useRouter();
+const route = useRoute();
 const user = currentUser();
-const activeNav = nav.filter(item => item.to === (user ? homeForRole(user.role) : ''));
-function logout(){ signOut(); router.replace('/login'); }
+const { airlineName } = useAirlines();
+const { departmentName } = useDepartments();
+
+const navByRole = { REPORTER: '정비 요청', MAINTENANCE: '배정 큐', ADMIN: '운영 콘솔' } as const;
+const nav = computed(() => (user ? [{ to: homeForRole(user.role), label: navByRole[user.role] }] : []));
+/** 이름 아래 한 줄: 소속. 시드 계정처럼 이름이 소속과 같으면 이메일을 보여줍니다. */
+const affiliation = computed(() => {
+  if (!user) return '';
+  const text = user.role === 'REPORTER' ? airlineName(user.airline_code)
+    : user.role === 'MAINTENANCE' ? `${departmentName(user.department_code)}팀` : roleLabel.ADMIN;
+  return text === user.name ? user.email : `${roleLabel[user.role]} · ${text}`;
+});
+const initial = computed(() => user?.name?.trim().charAt(0) || '?');
+
+function logout() { signOut(); router.replace('/login'); }
 </script>
+
 <template>
-  <div class="app-shell">
-    <header class="global-header">
-      <div class="brand"><span class="brand-mark">A</span><div><strong>AeroMCC</strong><small>Maintenance Operations</small></div></div>
-      <div class="global-header__context"><slot name="role"/></div>
-      <div class="operator">
-        <button class="header-help" type="button" aria-label="도움말"><i class="pi pi-question-circle"/></button>
-        <button class="operator-profile" type="button"><div class="avatar">{{ user?.name?.slice(-2) || 'MRO' }}</div><span><b>{{ user?.name }}</b><small>{{ user?.email }}</small></span></button>
-        <Button icon="pi pi-sign-out" text rounded aria-label="로그아웃" @click="logout"/>
+  <header class="topbar">
+    <div class="topbar__inner">
+      <RouterLink class="brand" :to="user ? homeForRole(user.role) : '/login'"><img class="brand__mark" src="/logo.png" alt="" />MRO Agent</RouterLink>
+      <nav class="topbar__nav" aria-label="주 메뉴">
+        <RouterLink v-for="item in nav" :key="item.to" :to="item.to" :class="{ 'is-active': route.path === item.to }">{{ item.label }}</RouterLink>
+      </nav>
+      <div class="topbar__right">
+        <div class="user-chip">
+          <div class="user-chip__text"><b>{{ user?.name }}</b><small>{{ affiliation }}</small></div>
+          <span class="avatar" :title="user?.email">{{ initial }}</span>
+        </div>
+        <button class="text-button" type="button" @click="logout">로그아웃</button>
       </div>
-    </header>
-    <aside>
-      <div class="nav-group-label">정비 업무</div>
-      <nav aria-label="주 메뉴"><Button v-for="item in activeNav" :key="item.to" :label="item.label" :icon="`pi ${item.icon}`" class="nav-button" @click="router.push(item.to)"/></nav>
-      <div class="environment"><b>운영 시스템</b><small>문의 · 시스템 관리자</small></div>
-    </aside>
-    <main><section class="workspace"><slot/></section></main>
-  </div>
+    </div>
+  </header>
+  <main class="shell__main"><slot /></main>
 </template>

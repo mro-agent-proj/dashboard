@@ -37,7 +37,7 @@ async function submit(){
   try{
     const created=await api.createRequest({...form.value});
     items.value.unshift(created);selected.value=created;form.value.symptom_text='';
-    toast.add({severity:'success',summary:'정비 요청이 접수되었습니다',detail:`${created.tail_number} · 분석 대기`,life:2600});
+    toast.add({severity:'success',summary:'정비 요청이 접수되었습니다',detail:`${created.tail_number} · AI 분석을 시작합니다.`,life:2600});
   }catch(error){
     const body=apiError(error);
     if(body?.code==='NEEDS_SUPPLEMENT'){
@@ -65,11 +65,10 @@ onUnmounted(()=>{if(listTimer)clearInterval(listTimer);if(detailTimer)clearInter
 
 <template>
   <AppShell>
-    <template #role>정비 요청</template>
-    <PageHeader title="정비 요청" description="기체 이상을 접수하고 처리 상태를 확인합니다."/>
-    <div class="reporter-workflow">
-      <RequestComposer v-model="form" :submitting="submitting" :supplement="supplement" @submit="submit"/>
-      <RequestHistoryPanel v-model:selected="selected" :items="items" :loading="loading"/>
+    <PageHeader title="정비 요청" description="기체 이상을 접수하고 처리 상태를 확인합니다." />
+    <div class="reporter-grid">
+      <RequestComposer v-model="form" :submitting="submitting" :supplement="supplement" @submit="submit" />
+      <RequestHistoryPanel v-model:selected="selected" :items="items" :loading="loading" />
     </div>
   </AppShell>
 </template>

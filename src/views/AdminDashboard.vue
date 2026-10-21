@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'; import { useToast } from 'primevue/usetoast'; import Dialog from 'primevue/dialog'; import Button from 'primevue/button'; import Select from 'primevue/select'; import Textarea from 'primevue/textarea';
-import AppShell from '../layouts/AppShell.vue'; import RequestTable from '../components/RequestTable.vue'; import RequestDetail from '../components/RequestDetail.vue';
-import { api, apiError } from '../services/api';
-import type { Department, RepairRequest, ReviewAction, ReviewItem, StatsSummary, TraceResponse } from '../types';
-const toast=useToast(), items=ref<RepairRequest[]>([]), reviews=ref<ReviewItem[]>([]), departments=ref<Department[]>([]), stats=ref<StatsSummary|null>(null), ragStatus=ref('UNKNOWN');
+import AppShell from '../layouts/AppShell.vue'; import PageHeader from '../components/ui/PageHeader.vue'; import RequestTable from '../components/RequestTable.vue'; import RequestDetail from '../components/RequestDetail.vue';
+import { api, apiError } from '../services/api'; import { useDepartments } from '../services/labels';
+import type { RepairRequest, ReviewAction, ReviewItem, StatsSummary, TraceResponse } from '../types';
+const toast=useToast(), items=ref<RepairRequest[]>([]), reviews=ref<ReviewItem[]>([]), stats=ref<StatsSummary|null>(null), ragStatus=ref('UNKNOWN');
 const filter=ref<'ALL'|'HUMAN_REVIEW'>('ALL'), selected=ref<RepairRequest|null>(null), trace=ref<TraceResponse|null>(null);
 const assignOpen=ref(false), closeOpen=ref(false), department=ref(''), note=ref(''), loading=ref(false), busy=ref(false);
+const { departments } = useDepartments();
+const departmentOptions=computed(()=>departments.value.map(d=>({label:`${d.name} (${d.code})`,value:d.code})));
 let timer:number|undefined;
 
 const openReview=computed(()=>selected.value?reviews.value.find(r=>r.request_id===selected.value!.id)??null:null);
@@ -45,10 +47,66 @@ async function resolve(action:ReviewAction){
   }catch(e){toast.add({severity:'error',summary:'처리하지 못했습니다',detail:apiError(e)?.message,life:3000});}
   finally{busy.value=false;}
 }
-onMounted(async()=>{
-  load();timer=window.setInterval(load,15000);
-  try{departments.value=await api.departments();}catch{toast.add({severity:'error',summary:'부서 목록을 불러오지 못했습니다',life:3000});}
-});
+onMounted(()=>{load();timer=window.setInterval(load,15000);});
 onUnmounted(()=>{if(timer)clearInterval(timer);});
 </script>
-<template><AppShell><template #role>어드민 · MCC</template><div class="page-title"><div><span>CONTROL DESK</span><h1>정비상황실 운영 콘솔</h1><p>전체 요청과 자동 배정 중지 건을 한 화면에서 관리합니다.</p></div><div class="rag-health"><i class="pi pi-database"/><div><b>RAG {{ ragStatus==='UP'?'READY':ragStatus }}</b><small>/actuator/health · ragData</small></div></div></div><div class="metric-strip"><div><small>전체 요청</small><b>{{ stats?.total ?? '-' }}</b></div><div><small>사람 검토</small><b class="danger-text">{{ stats?.by_status.HUMAN_REVIEW ?? 0 }}</b></div><div><small>자동 배정률</small><b>{{ pct(stats?.auto_assign_rate) }}</b></div><div><small>첫 배정까지 평균</small><b>{{ minutes(stats?.avg_minutes_to_first_assignment) }}</b></div></div><div class="console-grid"><div class="queue-panel"><div class="panel-head"><div><b>전체 요청 큐</b><small>HUMAN_REVIEW 우선 표시 · 검토 대기 {{ reviews.length }}건</small></div><div class="filter-tabs"><Button label="전체" size="small" :outlined="filter!=='ALL'" @click="setFilter('ALL')"/><Button label="사람 검토" severity="danger" size="small" :outlined="filter!=='HUMAN_REVIEW'" @click="setFilter('HUMAN_REVIEW')"/><Button icon="pi pi-refresh" text size="small" :loading="loading" aria-label="새로고침" @click="load"/></div></div><RequestTable :items="items" :selected="selected" @select="select"/></div><RequestDetail :request="selected" :trace="trace" mode="admin" :canResolve="!!openReview" @assign="openAssign" @close="closeOpen=true"/></div><Dialog v-model:visible="assignOpen" modal header="수동 부서 배정" :style="{width:'480px'}"><div class="request-form"><label>담당 부서</label><Select v-model="department" :options="departments" :optionLabel="d=>`${d.code} · ${d.name}`" optionValue="code" fluid/><label>검토 메모</label><Textarea v-model="note" rows="4" fluid placeholder="수동 배정 근거를 입력하세요."/></div><template #footer><Button label="취소" text @click="assignOpen=false"/><Button label="배정 확정" :disabled="!note.trim()||!department" :loading="busy" @click="resolve('ASSIGN')"/></template></Dialog><Dialog v-model:visible="closeOpen" modal header="요청 종결" :style="{width:'480px'}"><p class="dialog-copy">종결된 요청은 자동 배정되지 않습니다. 종결 사유를 입력하세요.</p><Textarea v-model="note" rows="4" fluid/><template #footer><Button label="취소" text @click="closeOpen=false"/><Button label="요청 종결" severity="danger" :disabled="!note.trim()" :loading="busy" @click="resolve('CLOSE')"/></template></Dialog></AppShell></template>
+<template>
+  <AppShell>
+    <PageHeader title="운영 콘솔" description="전체 요청과 자동 배정이 중지된 건을 관리합니다.">
+      <span class="pill" :title="'/actuator/health · ragData: ' + ragStatus">
+        <span class="dot" :class="ragStatus === 'UP' ? 'is-up' : ragStatus === 'UNKNOWN' ? 'is-unknown' : 'is-down'" />
+        RAG {{ ragStatus === 'UP' ? '정상' : ragStatus === 'UNKNOWN' ? '확인 중' : '점검 필요' }}
+      </span>
+      <Button label="새로고침" severity="secondary" outlined size="small" :loading="loading" @click="load" />
+    </PageHeader>
+    <div class="stats">
+      <div class="stat"><div class="stat__label">전체 요청</div><div class="stat__value">{{ stats?.total ?? '-' }}</div><div class="stat__hint">누적</div></div>
+      <div class="stat"><div class="stat__label">사람 검토 대기</div><div class="stat__value" :class="{ 'is-danger': (stats?.by_status.HUMAN_REVIEW ?? 0) > 0 }">{{ stats?.by_status.HUMAN_REVIEW ?? 0 }}</div><div class="stat__hint">자동 배정이 중지된 요청</div></div>
+      <div class="stat"><div class="stat__label">자동 배정률</div><div class="stat__value">{{ pct(stats?.auto_assign_rate) }}</div><div class="stat__hint">AI가 바로 배정한 비율</div></div>
+      <div class="stat"><div class="stat__label">첫 배정까지</div><div class="stat__value">{{ minutes(stats?.avg_minutes_to_first_assignment) }}</div><div class="stat__hint">평균 소요 시간</div></div>
+    </div>
+    <div class="split">
+      <section class="card">
+        <div class="card__header">
+          <div><h2>요청 목록<span class="count">{{ items.length }}</span></h2><p>사람 검토 건을 먼저 보여줍니다.</p></div>
+          <div class="segmented" role="tablist">
+            <button type="button" role="tab" :class="{ 'is-active': filter === 'ALL' }" @click="setFilter('ALL')">전체</button>
+            <button type="button" role="tab" :class="{ 'is-active': filter === 'HUMAN_REVIEW' }" @click="setFilter('HUMAN_REVIEW')">사람 검토 {{ reviews.length }}</button>
+          </div>
+        </div>
+        <RequestTable :items="items" :selected="selected" :loading="loading"
+          :emptyTitle="filter === 'ALL' ? '요청이 없습니다' : '검토할 요청이 없습니다'" emptyText="새 요청이 들어오면 자동으로 표시됩니다." @select="select" />
+      </section>
+      <section class="card split__detail">
+        <RequestDetail :request="selected" :trace="trace" mode="admin" :canResolve="!!openReview" :busy="busy" @assign="openAssign" @close="closeOpen = true" />
+      </section>
+    </div>
+    <Dialog v-model:visible="assignOpen" modal header="수동 배정" :style="{ width: 'min(480px, 92vw)' }">
+      <div class="form">
+        <div class="field">
+          <label for="assign-dept">담당 부서<em>*</em></label>
+          <Select inputId="assign-dept" v-model="department" :options="departmentOptions" optionLabel="label" optionValue="value" placeholder="부서 선택" fluid />
+        </div>
+        <div class="field">
+          <label for="assign-note">검토 메모<em>*</em></label>
+          <Textarea id="assign-note" v-model="note" rows="4" fluid placeholder="수동 배정 근거를 입력하세요." />
+        </div>
+      </div>
+      <template #footer>
+        <Button label="취소" text severity="secondary" @click="assignOpen = false" />
+        <Button label="배정 확정" :disabled="!note.trim() || !department" :loading="busy" @click="resolve('ASSIGN')" />
+      </template>
+    </Dialog>
+    <Dialog v-model:visible="closeOpen" modal header="요청 종결" :style="{ width: 'min(480px, 92vw)' }">
+      <p class="dialog-copy">종결한 요청은 다시 배정되지 않습니다.</p>
+      <div class="field">
+        <label for="close-note">종결 사유<em>*</em></label>
+        <Textarea id="close-note" v-model="note" rows="4" fluid />
+      </div>
+      <template #footer>
+        <Button label="취소" text severity="secondary" @click="closeOpen = false" />
+        <Button label="요청 종결" severity="danger" :disabled="!note.trim()" :loading="busy" @click="resolve('CLOSE')" />
+      </template>
+    </Dialog>
+  </AppShell>
+</template>

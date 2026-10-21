@@ -1,8 +1,42 @@
 <script setup lang="ts">
-import DataTable from 'primevue/datatable'; import Column from 'primevue/column'; import Button from 'primevue/button';
-import StatusTag from './StatusTag.vue'; import type { RepairRequest } from '../types';
-withDefaults(defineProps<{ items:RepairRequest[]; selected?:RepairRequest|null; showPriority?:boolean; audience?:'reporter'|'operations' }>(),{showPriority:true,audience:'operations'});
-const emit=defineEmits<{ select:[RepairRequest] }>();
-const kst=(iso:string)=>new Intl.DateTimeFormat('ko-KR',{hour:'2-digit',minute:'2-digit',timeZone:'Asia/Seoul'}).format(new Date(iso));
+import StatusTag from './StatusTag.vue';
+import { formatTime, shortId } from '../services/labels';
+import type { RepairRequest } from '../types';
+
+withDefaults(defineProps<{
+  items: RepairRequest[];
+  selected?: RepairRequest | null;
+  audience?: 'reporter' | 'operations';
+  loading?: boolean;
+  timeLabel?: string;
+  emptyTitle?: string;
+  emptyText?: string;
+}>(), { audience: 'operations', timeLabel: '접수', emptyTitle: '요청이 없습니다', emptyText: '새 요청이 들어오면 여기에 표시됩니다.' });
+const emit = defineEmits<{ select: [RepairRequest] }>();
 </script>
-<template><DataTable :value="items" dataKey="id" size="small" scrollable scrollHeight="520px" :rowClass="r=>r.id===selected?.id?'selected-row':''"><Column v-if="showPriority" header="우선"><template #body="{data}"><span class="priority" :class="data.status==='HUMAN_REVIEW'?'critical':'normal'">{{ data.status==='HUMAN_REVIEW'?'HUMAN':'NORMAL' }}</span></template></Column><Column field="id" header="요청번호"><template #body="{data}"><button class="link-button" :title="data.id" @click="emit('select',data)">{{ data.id.slice(0,8) }}</button><small>{{ kst(data.created_at) }}</small></template></Column><Column field="tail_number" header="기체"><template #body="{data}"><b>{{ data.tail_number }}</b><small>{{ data.aircraft_model }}</small></template></Column><Column field="symptom_text" header="신고 증상" style="min-width:22rem"><template #body="{data}"><span class="truncate">{{ data.symptom_text }}</span></template></Column><Column field="status" header="처리 상태"><template #body="{data}"><StatusTag :status="data.status" :audience="audience"/></template></Column><Column header="상세" style="width:5rem"><template #body="{data}"><Button icon="pi pi-arrow-right" text rounded aria-label="상세 보기" @click="emit('select',data)"/></template></Column></DataTable></template>
+
+<template>
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr><th>기체</th><th>증상</th><th>상태</th><th class="col-optional">{{ timeLabel }}</th></tr>
+      </thead>
+      <tbody>
+        <template v-if="loading && !items.length">
+          <tr v-for="n in 4" :key="n" class="skeleton-row"><td colspan="4"><div class="skeleton" :style="{ width: `${90 - n * 12}%` }" /></td></tr>
+        </template>
+        <tr v-for="row in items" v-else :key="row.id" :class="{ 'is-selected': row.id === selected?.id }" tabindex="0"
+          @click="emit('select', row)" @keydown.enter="emit('select', row)">
+          <td>
+            <div class="cell-main">{{ row.tail_number }}</div>
+            <div class="cell-sub">{{ row.aircraft_model }} · <span class="mono" :title="row.id">{{ shortId(row.id) }}</span></div>
+          </td>
+          <td><span class="cell-symptom">{{ row.symptom_text }}</span></td>
+          <td><StatusTag :status="row.status" :audience="audience" /></td>
+          <td class="col-optional"><span class="cell-time">{{ formatTime(row.created_at) }}</span></td>
+        </tr>
+      </tbody>
+    </table>
+    <div v-if="!loading && !items.length" class="empty"><b>{{ emptyTitle }}</b><p>{{ emptyText }}</p></div>
+  </div>
+</template>

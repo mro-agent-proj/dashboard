@@ -1,4 +1,4 @@
-# AeroMCC Dashboard
+# MRO Agent Dashboard
 
 Vue 3 + TypeScript + PrimeVue 4 기반 MRO 운영 대시보드입니다.
 

@@ -8,10 +8,11 @@ export type ReviewAction = 'ASSIGN' | 'CLOSE';
 
 export interface User { id: string; name: string; email: string; role: Role; department_code?: string | null; airline_code?: string | null; }
 export interface LoginResponse { access_token: string; token_type: string; expires_in: number; user: User; }
+export interface Airline { code: string; name: string; }
 export interface Department { code: string; name: string; ata_chapters: string[]; }
 
 /** 에러 응답: { error: { code, message, details? } } */
-export interface ApiErrorBody { code: string; message: string; details?: SupplementDetail[]; }
+export interface ApiErrorBody { code: string; message: string; details?: Array<SupplementDetail & { issue: string }>; }
 /** 422 NEEDS_SUPPLEMENT의 details 항목 (IntakeIssue) */
 export interface SupplementDetail { field?: string; issue: 'REQUIRED'|'NOT_FOUND'|'INACTIVE'|'MISMATCH'|'FORBIDDEN_AIRLINE'; expected?: string; }
 

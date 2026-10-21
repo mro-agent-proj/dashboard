@@ -1,6 +1,6 @@
 import axios from 'axios';
 import type {
-  ApiErrorBody, Assignment, AssignmentStatus, Department, LoginResponse, Page, RepairRequest, RequestStatus,
+  Airline, ApiErrorBody, Assignment, AssignmentStatus, Department, LoginResponse, Page, RepairRequest, RequestStatus,
   ReviewAction, ReviewItem, ReviewStatus, StatsSummary, TraceResponse, User
 } from '../types';
 
@@ -11,8 +11,8 @@ http.interceptors.request.use(config => {
   return config;
 });
 http.interceptors.response.use(r => r, error => {
-  // 로그인 실패(INVALID_CREDENTIALS)도 401이므로 로그인 요청은 화면에서 직접 처리합니다.
-  if (error.response?.status === 401 && !error.config?.url?.endsWith('/auth/login')) { sessionStorage.clear(); location.href = '/login'; }
+  // 로그인 실패(INVALID_CREDENTIALS)도 401이므로 로그인·가입 요청은 화면에서 직접 처리합니다.
+  if (error.response?.status === 401 && !error.config?.url?.startsWith('/auth/')) { sessionStorage.clear(); location.href = '/login'; }
   return Promise.reject(error);
 });
 
@@ -25,6 +25,9 @@ export function apiError(error: unknown): (ApiErrorBody & { status?: number }) |
 
 export const api = {
   login: (email: string, password: string) => http.post<LoginResponse>('/auth/login', { email, password }).then(r => r.data),
+  signup: (body: { email: string; password: string; name: string; airline_code: string }) =>
+    http.post<LoginResponse>('/auth/signup', body).then(r => r.data),
+  airlines: () => http.get<Airline[]>('/airlines').then(r => r.data),
   me: () => http.get<User>('/me').then(r => r.data),
   departments: () => http.get<Department[]>('/departments').then(r => r.data),
   createRequest: (body: { tail_number: string; aircraft_model: string; airline_code: string; symptom_text: string }) =>

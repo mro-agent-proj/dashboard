@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue'; import { useToast } from 'primevue/usetoast'; import Dialog from 'primevue/dialog'; import Button from 'primevue/button'; import Textarea from 'primevue/textarea';
-import AppShell from '../layouts/AppShell.vue'; import RequestTable from '../components/RequestTable.vue'; import RequestDetail from '../components/RequestDetail.vue';
-import { api, apiError } from '../services/api'; import { currentUser } from '../services/auth';
+import AppShell from '../layouts/AppShell.vue'; import PageHeader from '../components/ui/PageHeader.vue'; import RequestTable from '../components/RequestTable.vue'; import RequestDetail from '../components/RequestDetail.vue';
+import { api, apiError } from '../services/api'; import { currentUser } from '../services/auth'; import { useDepartments } from '../services/labels';
 import type { Assignment, RepairRequest, TraceResponse } from '../types';
 const toast=useToast(), user=currentUser(), departmentCode=user?.department_code||'';
-const departmentName=ref(departmentCode), assignments=ref<Assignment[]>([]), items=ref<RepairRequest[]>([]), selected=ref<RepairRequest|null>(null), trace=ref<TraceResponse|null>(null);
+const { departmentName } = useDepartments();
+const assignments=ref<Assignment[]>([]), items=ref<RepairRequest[]>([]), selected=ref<RepairRequest|null>(null), trace=ref<TraceResponse|null>(null);
 const counts=ref({pending:0,accepted:0,rejected:0}), loading=ref(false), busy=ref(false), rejectOpen=ref(false), reason=ref('');
 let timer:number|undefined;
 
@@ -46,10 +47,40 @@ async function reject(){
   catch(e){toast.add({severity:'error',summary:'거절하지 못했습니다',detail:apiError(e)?.message,life:3000});}
   finally{busy.value=false;}
 }
-onMounted(async()=>{
-  load();timer=window.setInterval(load,15000);
-  try{departmentName.value=(await api.departments()).find(d=>d.code===departmentCode)?.name||departmentCode;}catch{/* 코드로 표시 */}
-});
+onMounted(()=>{load();timer=window.setInterval(load,15000);});
 onUnmounted(()=>{if(timer)clearInterval(timer);});
 </script>
-<template><AppShell><template #role>정비팀 · {{ departmentCode }}</template><div class="page-title"><div><span>MAINTENANCE WORKSPACE</span><h1>정비 배정 큐</h1><p>{{ departmentName }}팀에 배정된 요청과 Agent 근거를 검토합니다.</p></div><div class="live-pill"><i class="pi pi-circle-fill"/> LIVE QUEUE</div></div><div class="metric-strip"><div><small>응답 대기</small><b>{{ counts.pending }}</b></div><div><small>수락 완료</small><b>{{ counts.accepted }}</b></div><div><small>거절</small><b class="danger-text">{{ counts.rejected }}</b></div><div><small>담당 부서</small><b>{{ departmentCode }}</b></div></div><div class="console-grid"><div class="queue-panel"><div class="panel-head"><div><b>부서 대기함</b><small>PENDING · {{ departmentCode }}</small></div><Button label="새로고침" icon="pi pi-refresh" text :loading="loading" @click="load"/></div><RequestTable :items="items" :selected="selected" @select="select"/></div><RequestDetail :request="selected" :trace="trace" mode="maintenance" @accept="accept" @reject="rejectOpen=true"/></div><Dialog v-model:visible="rejectOpen" modal header="배정 거절" :style="{width:'480px'}"><p class="dialog-copy">거절 시 요청은 자동 재배정되지 않고 어드민 사람 검토 큐로 이동합니다.</p><Textarea v-model="reason" rows="4" fluid placeholder="담당 부서 불일치, 정보 부족 등 사유를 입력하세요."/><template #footer><Button label="취소" text @click="rejectOpen=false"/><Button label="거절 및 인계" severity="danger" :disabled="!reason.trim()" :loading="busy" @click="reject"/></template></Dialog></AppShell></template>
+<template>
+  <AppShell>
+    <PageHeader title="배정 큐" :description="`${departmentName(departmentCode)}팀에 배정된 요청과 AI 판단 근거를 확인합니다.`">
+      <span class="pill"><span class="dot is-up" />15초마다 자동 갱신</span>
+      <Button label="새로고침" severity="secondary" outlined size="small" :loading="loading" @click="load" />
+    </PageHeader>
+    <div class="stats">
+      <div class="stat"><div class="stat__label">응답 대기</div><div class="stat__value">{{ counts.pending }}</div><div class="stat__hint">수락 또는 거절이 필요한 배정</div></div>
+      <div class="stat"><div class="stat__label">수락 완료</div><div class="stat__value">{{ counts.accepted }}</div><div class="stat__hint">누적</div></div>
+      <div class="stat"><div class="stat__label">거절</div><div class="stat__value" :class="{ 'is-danger': counts.rejected > 0 }">{{ counts.rejected }}</div><div class="stat__hint">관리자 검토로 넘어간 건</div></div>
+      <div class="stat"><div class="stat__label">담당 부서</div><div class="stat__value">{{ departmentCode }}</div><div class="stat__hint">{{ departmentName(departmentCode) }}</div></div>
+    </div>
+    <div class="split">
+      <section class="card">
+        <div class="card__header"><div><h2>응답 대기<span class="count">{{ items.length }}</span></h2><p>배정된 순서대로 표시됩니다.</p></div></div>
+        <RequestTable :items="items" :selected="selected" :loading="loading" timeLabel="배정" emptyTitle="대기 중인 배정이 없습니다" emptyText="새 배정이 들어오면 자동으로 표시됩니다." @select="select" />
+      </section>
+      <section class="card split__detail">
+        <RequestDetail :request="selected" :trace="trace" mode="maintenance" :busy="busy" @accept="accept" @reject="rejectOpen = true" />
+      </section>
+    </div>
+    <Dialog v-model:visible="rejectOpen" modal header="배정 거절" :style="{ width: 'min(480px, 92vw)' }">
+      <p class="dialog-copy">거절하면 자동으로 다시 배정되지 않고, 관리자 검토 대기열로 넘어갑니다.</p>
+      <div class="field">
+        <label for="reject-reason">거절 사유<em>*</em></label>
+        <Textarea id="reject-reason" v-model="reason" rows="4" fluid placeholder="담당 부서 불일치, 정보 부족 등" />
+      </div>
+      <template #footer>
+        <Button label="취소" text severity="secondary" @click="rejectOpen = false" />
+        <Button label="거절하고 넘기기" severity="danger" :disabled="!reason.trim()" :loading="busy" @click="reject" />
+      </template>
+    </Dialog>
+  </AppShell>
+</template>
