@@ -1,0 +1,34 @@
+:root{
+  /* One brand hue. Soft/hover states are the same Korean Air-inspired blue at different opacity. */
+  --mro-color-brand:#00256c;
+  --mro-color-brand-hover:#001d56;
+  --mro-color-brand-soft:rgba(0,37,108,.075);
+  --mro-color-brand-line:rgba(0,37,108,.20);
+  --mro-color-brand-700:var(--mro-color-brand);
+  --mro-color-brand-600:var(--mro-color-brand);
+  --mro-color-brand-100:var(--mro-color-brand-soft);
+  --mro-color-ink-900:#17202e;
+  --mro-color-ink-700:#344054;
+  --mro-color-ink-500:#667085;
+  --mro-color-ink-400:#8a94a3;
+  --mro-color-line:#dfe4ea;
+  --mro-color-line-soft:#edf0f3;
+  --mro-color-canvas:#f5f6f8;
+  --mro-color-surface:#ffffff;
+  --mro-color-success:#17825c;
+  --mro-color-warning:#b75f0b;
+  --mro-color-danger:#c43752;
+  --mro-radius-sm:4px;
+  --mro-radius-md:6px;
+  --mro-shadow-flyout:0 16px 48px rgba(16,24,40,.14);
+  --mro-space-1:4px;
+  --mro-space-2:8px;
+  --mro-space-3:12px;
+  --mro-space-4:16px;
+  --mro-space-5:20px;
+  --mro-space-6:24px;
+  --mro-space-8:32px;
+  --mro-control-height:40px;
+  --mro-sidebar-width:224px;
+  --mro-header-height:52px;
+}
