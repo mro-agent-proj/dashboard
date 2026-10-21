@@ -33,7 +33,7 @@ async function submit() {
 <template>
   <AuthLayout>
     <h1>로그인</h1>
-    <p>MRO Agent 계정으로 로그인하세요.</p>
+    <p>항공기 정비요청 Agent 계정으로 로그인하세요.</p>
     <form class="form" novalidate @submit.prevent="submit">
       <div v-if="error" class="callout callout--danger" role="alert"><span>{{ error }}</span></div>
       <div class="field">

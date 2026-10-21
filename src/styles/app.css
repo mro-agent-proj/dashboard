@@ -1,4 +1,4 @@
-/* MRO Agent 디자인 시스템: 흰 바탕 + 얇은 테두리 + 포인트 색 하나 (blue). */
+/* 항공기 정비요청 Agent 디자인 시스템: 흰 바탕 + 얇은 테두리 + 포인트 색 하나 (blue). */
 :root {
   --bg: #fafafa;
   --surface: #ffffff;
@@ -59,7 +59,7 @@ h1, h2, h3, p { margin: 0; }
   max-width: 1360px; height: 100%; margin: 0 auto; padding: 0 24px;
   display: flex; align-items: center; gap: 28px;
 }
-.brand { display: flex; align-items: center; gap: 10px; color: var(--text); font-weight: 700; letter-spacing: -.01em; }
+.brand { display: flex; white-space: nowrap; align-items: center; gap: 10px; color: var(--text); font-weight: 700; letter-spacing: -.01em; }
 .brand:hover { text-decoration: none; }
 .brand__mark { display: block; width: 30px; height: 30px; border-radius: 7px; flex: none; }
 .brand small { margin-left: 2px; color: var(--text-3); font-weight: 500; font-size: 12px; }

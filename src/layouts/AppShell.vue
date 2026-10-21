@@ -27,7 +27,7 @@ function logout() { signOut(); router.replace('/login'); }
 <template>
   <header class="topbar">
     <div class="topbar__inner">
-      <RouterLink class="brand" :to="user ? homeForRole(user.role) : '/login'"><img class="brand__mark" src="/logo.png" alt="" />MRO Agent</RouterLink>
+      <RouterLink class="brand" :to="user ? homeForRole(user.role) : '/login'"><img class="brand__mark" src="/logo.png" alt="" />항공기 정비요청 Agent</RouterLink>
       <nav class="topbar__nav" aria-label="주 메뉴">
         <RouterLink v-for="item in nav" :key="item.to" :to="item.to" :class="{ 'is-active': route.path === item.to }">{{ item.label }}</RouterLink>
       </nav>

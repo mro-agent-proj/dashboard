@@ -1,4 +1,4 @@
-# MRO Agent Dashboard
+# 항공기 정비요청 Agent Dashboard
 
 항공 정비 요청을 접수하고, AI가 추천한 담당 정비팀이 배정을 확인하고, 관리자가 사람 검토 건을 처리하는 웹 화면입니다.
 Vue 3 · TypeScript · PrimeVue 4로 만들었고, 데이터는 모두 Spring 백엔드 API에서 받습니다(목업 데이터 없음).
