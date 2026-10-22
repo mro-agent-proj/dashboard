@@ -45,7 +45,7 @@ Vite 개발 서버가 `/api`, `/actuator` 요청을 `http://localhost:8080`(백�
 | 정비팀 | `avi@` `cab@` `ele@` `eng@` `fcs@` `hyd@` `str@` `sys@mro.test` | 배정 큐 (부서별) |
 | 신고자 | `reporter1@kal.test` `reporter1@aar.test` `reporter1@jna.test` (각 `reporter2`도 있음) | 정비 요청 |
 
-시연용 증상은 backend 레포 `seed/scenarios.md`(S01~S23)에 있습니다. 예: `reporter1@kal.test`로 기체 `HL7713` / 기종 `A321-211`, 증상 "접근 중 플랩을 CONF 1로 내리자 ECAM F/CTL FLAP SYS 1 FAULT가 또 뜸" → 비행 조종팀(FCS) 배정.
+시연용 증상은 backend 레포 `data/eval/scenarios.md`(S01~S23)에 있습니다. 예: `reporter1@kal.test`로 기체 `HL7713` / 기종 `A321-211`, 증상 "접근 중 플랩을 CONF 1로 내리자 ECAM F/CTL FLAP SYS 1 FAULT가 또 뜸" → 비행 조종팀(FCS) 배정.
 
 ## 화면
 
