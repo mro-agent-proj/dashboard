@@ -1,4 +1,4 @@
-import type { Assessment, Evidence, TraceResponse } from '../types';
+import type { Assessment, Evidence, ReferenceAmm, TraceResponse } from '../types';
 
 export interface TraceSummary {
   ata_chapter?: string;
@@ -6,6 +6,8 @@ export interface TraceSummary {
   proposed_department?: string;
   retry_count: number;
   evidence: Evidence[];
+  /** 배정 후 참고 AMM. evidence(판단 근거)와 따로 보여 줍니다. */
+  reference_amm: ReferenceAmm[];
   reached: Set<Assessment['stage']>;
 }
 
@@ -26,6 +28,7 @@ export function summarizeTrace(trace: TraceResponse): TraceSummary {
     proposed_department: final?.department ?? investigation?.proposed_department ?? classification?.proposed_department,
     retry_count: investigateAttempts.length ? Math.max(...investigateAttempts) - 1 : 0,
     evidence: (final?.evidence ?? investigation?.evidence ?? []) as Evidence[],
+    reference_amm: (final?.reference_amm ?? []) as ReferenceAmm[],
     reached: new Set(trace.assessments.map(a => a.stage))
   };
 }
