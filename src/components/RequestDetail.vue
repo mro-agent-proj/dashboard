@@ -3,6 +3,7 @@ import { computed } from 'vue';
 import Button from 'primevue/button';
 import StatusTag from './StatusTag.vue';
 import EvidencePanel from './EvidencePanel.vue';
+import ReferenceAmmPanel from './ReferenceAmmPanel.vue';
 import { summarizeTrace } from '../services/trace';
 import { formatTime, reporterStatusText, reviewReasonLabel, shortId, statusMeta, useAirlines, useDepartments } from '../services/labels';
 import type { RepairRequest, RequestStatus, TraceResponse } from '../types';
@@ -93,6 +94,10 @@ const actorLabel = { USER: '사용자', AI: 'AI', SYSTEM: '시스템' } as const
         <section v-if="summary">
           <div class="section-label">근거 자료</div>
           <EvidencePanel :items="summary.evidence" />
+        </section>
+        <section v-if="summary?.reference_amm.length">
+          <div class="section-label">참고 AMM (정비팀 전달용)</div>
+          <ReferenceAmmPanel :items="summary.reference_amm" />
         </section>
         <section v-if="history.length">
           <div class="section-label">처리 이력</div>

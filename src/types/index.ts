@@ -45,6 +45,10 @@ export interface HistoryItem {
 }
 export interface TraceResponse { request: RepairRequest; assessments: Assessment[]; history: HistoryItem[]; }
 export interface Evidence { source: 'HISTORY' | 'SDR' | 'AMM' | string; ref_id: string; excerpt: string; why: string; score?: number; }
+/** 배정 후 정비팀 참고용 AMM. 근거로 쓴 SDR 원문에 인용된 번호이며 판단 근거가 아님 (FINAL.reference_amm). */
+export interface ReferenceAmm {
+  sdr_ref_id: string; amm_ref: string; reference_level: string | null; context: string; evidence_id: string | null;
+}
 
 export interface StatsSummary {
   from: string; to: string; total: number; by_status: Partial<Record<RequestStatus, number>>; by_department: Record<string, number>;
