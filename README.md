@@ -45,7 +45,9 @@ Vite 개발 서버가 `/api`, `/actuator` 요청을 `http://localhost:8080`(백�
 | 정비팀 | `avi@` `cab@` `ele@` `eng@` `fcs@` `hyd@` `str@` `sys@mro.test` | 배정 큐 (부서별) |
 | 신고자 | `reporter1@kal.test` `reporter1@aar.test` `reporter1@jna.test` (각 `reporter2`도 있음) | 정비 요청 |
 
-시연용 증상은 backend 레포 `data/eval/scenario/scenarios.md`(S01~S23)에 있습니다. 예: `reporter1@kal.test`로 기체 `HL7713` / 기종 `A321-211`, 증상 "접근 중 플랩을 CONF 1로 내리자 ECAM F/CTL FLAP SYS 1 FAULT가 또 뜸" → 비행 조종팀(FCS) 배정.
+현재 시연·평가 입력은 backend 레포 `data/eval/service/scenarios.jsonl`(200건, v2 수리이력 1,600건 기준)을 사용합니다. 각 행의 `tail_number`, `airline_code`, `aircraft_model`, `symptom_text`를 입력하고 `expected` 등 정답 메타데이터는 보내지 않습니다. 결과는 모델 실행에 따라 달라질 수 있습니다. 과거 `data/eval/scenario/scenarios.md`(S01~S23)는 기록용이며 현재 시드의 정답 근거로 재사용하지 않습니다.
+
+LLM2 상태 격리는 AI 내부 변경으로 화면 API·DTO 변경은 없습니다. 통합 실행은 [integration 저장소](https://github.com/mro-agent-proj/mro-agent-integration)가 고정한 조합을 사용합니다.
 
 ## 화면
 
