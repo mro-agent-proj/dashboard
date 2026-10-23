@@ -57,6 +57,7 @@ onUnmounted(()=>{if(timer)clearInterval(timer);});
         <span class="dot" :class="ragStatus === 'UP' ? 'is-up' : ragStatus === 'UNKNOWN' ? 'is-unknown' : 'is-down'" />
         RAG {{ ragStatus === 'UP' ? '정상' : ragStatus === 'UNKNOWN' ? '확인 중' : '점검 필요' }}
       </span>
+      <Button label="인원 현황" severity="secondary" outlined size="small" @click="$router.push('/admin/staffing')" />
       <Button label="새로고침" severity="secondary" outlined size="small" :loading="loading" @click="load" />
     </PageHeader>
     <div class="stats">

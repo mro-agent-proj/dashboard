@@ -1,7 +1,7 @@
 import axios from 'axios';
 import type {
   Airline, ApiErrorBody, Assignment, AssignmentStatus, Department, LoginResponse, Page, RepairRequest, RequestStatus,
-  ReviewAction, ReviewItem, ReviewStatus, StatsSummary, TraceResponse, User
+  ReviewAction, ReviewItem, ReviewStatus, StaffingSummary, StatsSummary, TraceResponse, User
 } from '../types';
 
 const http = axios.create({ baseURL: import.meta.env.VITE_API_BASE_URL || '/api/v1', timeout: 10000 });
@@ -43,6 +43,7 @@ export const api = {
   resolve: (reviewId: string, body: { action: ReviewAction; department_code?: string; note?: string }) =>
     http.post<ReviewItem>(`/reviews/${reviewId}/resolve`, body).then(r => r.data),
   stats: () => http.get<StatsSummary>('/stats/summary').then(r => r.data),
+  staffing: () => http.get<StaffingSummary>('/staffing').then(r => r.data),
   /** /actuator는 /api 밖이라 baseURL을 쓰지 않습니다. */
   health: () => axios.get<{ status: string; components?: Record<string, { status: string }> }>('/actuator/health', { timeout: 5000 }).then(r => r.data)
 };

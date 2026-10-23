@@ -4,6 +4,7 @@ import MaintenanceDashboard from '../views/MaintenanceDashboard.vue';
 import AdminDashboard from '../views/AdminDashboard.vue';
 import LoginView from '../views/LoginView.vue';
 import SignupView from '../views/SignupView.vue';
+import StaffingBoard from '../views/StaffingBoard.vue';
 import { currentUser, homeForRole } from '../services/auth';
 
 const router = createRouter({ history:createWebHistory(), routes:[
@@ -12,7 +13,8 @@ const router = createRouter({ history:createWebHistory(), routes:[
   { path:'/signup', component:SignupView, meta:{ public:true } },
   { path:'/reporter', component:ReporterDashboard, meta:{ role:'REPORTER' } },
   { path:'/maintenance', component:MaintenanceDashboard, meta:{ role:'MAINTENANCE' } },
-  { path:'/admin', component:AdminDashboard, meta:{ role:'ADMIN' } }
+  { path:'/admin', component:AdminDashboard, meta:{ role:'ADMIN' } },
+  { path:'/admin/staffing', component:StaffingBoard, meta:{ role:'ADMIN' } }
 ]});
 
 router.beforeEach(to => {

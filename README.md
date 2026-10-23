@@ -56,6 +56,7 @@ Vite 개발 서버가 `/api`, `/actuator` 요청을 `http://localhost:8080`(백�
 | `/reporter` | 신고자 | 기체번호·기종·증상 접수, 내 요청 목록과 처리 단계. 입력이 등록 정보와 다르면 백엔드가 알려주는 값을 한 번에 적용 |
 | `/maintenance` | 정비팀 | 우리 부서 배정 대기 목록, AI 판단 요약·근거·처리 이력, 배정 수락·거절 |
 | `/admin` | 관리자 | 전체 요청, 사람 검토 필터, 수동 배정·종결, 통계(자동 배정률 등), RAG 데이터 상태 |
+| `/admin/staffing` | 관리자 | 인원 현황(참고용). 운영 콘솔의 "인원 현황" 버튼으로 이동. 전체·부서별 출근 인원을 작업가능·작업불가 도넛으로 보여주고, 미출근은 숫자로 따로 표시. 배정에는 쓰이지 않음 |
 
 처리 중인 요청은 3초, 목록은 15초마다 자동으로 갱신합니다.
 
@@ -63,9 +64,9 @@ Vite 개발 서버가 `/api`, `/actuator` 요청을 `http://localhost:8080`(백�
 
 ```
 src/
-├── views/        LoginView, SignupView, ReporterDashboard, MaintenanceDashboard, AdminDashboard
+├── views/        LoginView, SignupView, ReporterDashboard, MaintenanceDashboard, AdminDashboard, StaffingBoard
 ├── layouts/      AppShell(상단 바), AuthLayout(로그인·가입)
-├── components/   RequestComposer, RequestTable, RequestDetail, RequestHistoryPanel, EvidencePanel, StatusTag
+├── components/   RequestComposer, RequestTable, RequestDetail, RequestHistoryPanel, EvidencePanel, StatusTag, StaffDonut
 ├── services/
 │   ├── api.ts      백엔드 API 호출과 공통 에러 형식({ error: { code, message, details } }) 처리
 │   ├── auth.ts     로그인·가입·세션(sessionStorage)
