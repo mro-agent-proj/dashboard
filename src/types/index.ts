@@ -55,3 +55,8 @@ export interface StatsSummary {
   auto_assigned: number; human_reviewed: number; auto_assign_rate: number | null; avg_minutes_to_first_assignment: number | null;
 }
 export interface Page<T> { items: T[]; total: number; }
+
+/** 인원 현황판 (GET /staffing). 숫자는 모두 members에서 센 값입니다. */
+export interface StaffMember { id: string; name: string; title: string; shift: '주간' | '야간'; on_duty: boolean; available: boolean; note: string | null; }
+export interface DepartmentStaffing { code: string; name: string; total: number; on_duty: number; available: number; members: StaffMember[]; }
+export interface StaffingSummary { total: number; on_duty: number; available: number; departments: DepartmentStaffing[]; }
