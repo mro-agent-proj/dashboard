@@ -1,0 +1,78 @@
+name: Release
+
+# main에서 CI가 성공하면 이 커밋의 빌드를 AWS에 올리고(경로 = 커밋 SHA) 통합 레포에 알립니다.
+# 운영 배포는 infra 레포에서만 합니다. AWS·봇 변수가 아직 없으면 해당 job은 건너뜁니다.
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+env:
+  SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+  AWS_REGION: ${{ vars.AWS_REGION || 'ap-northeast-2' }}
+
+jobs:
+  image:
+    if: >-
+      vars.AWS_PUSH_ROLE_ARN != '' &&
+      (github.event_name == 'workflow_dispatch' ||
+       (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.SHA }}
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_PUSH_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+      # infra 레포 Deploy가 release.json의 SHA에 해당하는 이 빌드를 프론트 버킷으로 복사합니다
+      - name: 빌드 업로드 (releases/dashboard/<SHA>/)
+        run: |
+          dest="s3://${{ vars.RELEASES_BUCKET }}/dashboard/$SHA/"
+          if aws s3 ls "${dest}index.html" >/dev/null 2>&1; then echo "이미 있음: $dest"; exit 0; fi
+          aws s3 cp --recursive dist "$dest"
+
+  # 통합 레포 Sync가 네 서비스 main을 모아 검증합니다
+  notify:
+    needs: image
+    if: >-
+      always() && vars.RELEASE_APP_ID != '' &&
+      (needs.image.result == 'success' || needs.image.result == 'skipped') &&
+      (github.event_name == 'workflow_dispatch' ||
+       (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/create-github-app-token@v1
+        id: app
+        with:
+          app-id: ${{ vars.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: mro-agent-integration
+      - env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+        run: |
+          payload="$(jq -n --arg repo "${{ github.event.repository.name }}" --arg sha "$SHA" '{event_type: "service-merged", client_payload: {repo: $repo, sha: $sha}}')"
+          echo "$payload" | gh api "repos/${{ github.repository_owner }}/mro-agent-integration/dispatches" --input -
