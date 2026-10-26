@@ -1,38 +1,19 @@
 # 항공기 정비요청 Agent Dashboard
 
 항공 정비 요청을 접수하고, AI가 추천한 담당 정비팀이 배정을 확인하고, 관리자가 사람 검토 건을 처리하는 웹 화면입니다.
-Vue 3 · TypeScript · PrimeVue 4로 만들었고, 데이터는 모두 Spring 백엔드 API에서 받습니다(목업 데이터 없음).
-
-## 전체 구성에서의 위치
+Vue 3 · TypeScript · PrimeVue 4로 만들었고, 데이터는 모두 Spring 백엔드 API에서 받습니다(목업 데이터 없음). 전체 구성·통합 실행은 [integration](https://github.com/mro-agent-proj/integration)을 참고하세요.
 
 ```
-[dashboard] ──HTTP /api──▶ [backend: Spring] ──RabbitMQ──▶ [ai: LLM1·2·3] ──MCP──▶ [agent: business-mcp · rag-mcp]
+[dashboard] ──HTTP /api──▶ [backend: Spring] ──RabbitMQ──▶ [ai: LLM1·2·3] ──MCP──▶ [business-mcp · rag-mcp]
    이 레포                    인증·요청·배정·DB            분류·조사·검토              업무·근거 조회 (읽기 전용)
 ```
-
-| 레포 | 역할 |
-| --- | --- |
-| [dashboard](https://github.com/mro-agent-proj/dashboard) | 이 레포. 신고자·정비팀·관리자 화면 |
-| [backend](https://github.com/mro-agent-proj/backend) | 인증, 요청 상태, 배정, DB·데이터, AI 실행 요청 |
-| [LLM](https://github.com/mro-agent-proj/LLM) | AI 서버. LLM1 분류 → LLM2 조사 → LLM3 검토 |
-| [agent](https://github.com/mro-agent-proj/agent) | MCP 서버. 수리이력·부서·SDR·AMM 근거 조회 |
-| [integration](https://github.com/mro-agent-proj/integration) | 서비스 4개의 검증된 커밋 조합, 로컬 실행·평가 스크립트 (봇이 자동 갱신) |
-| [infra](https://github.com/mro-agent-proj/infra) | AWS 인프라(Terraform)와 운영 배포. 배포는 여기서만 합니다 |
-| [deliverables](https://github.com/mro-agent-proj/deliverables) | 최종 결과보고서, 아키텍처 다이어그램 등 산출물 |
-
-## 변경과 배포
-
-1. 이 레포에 PR을 올립니다. main은 PR과 CI 통과가 필수입니다.
-2. main에 병합되면 Release 워크플로가 이 커밋의 빌드 결과를 S3(`releases/dashboard/<커밋 SHA>/`)에 올리고 [integration](https://github.com/mro-agent-proj/integration)에 알립니다.
-3. integration이 네 서비스 main을 모아 통합 검증을 통과하면 `verified-*` 태그를 붙입니다.
-4. [infra](https://github.com/mro-agent-proj/infra)에 release PR이 올라오고, 병합·승인하면 운영에 배포됩니다.
 
 ## 빠르게 실행하기
 
 백엔드가 먼저 떠 있어야 합니다.
 
 ```bash
-# 1. 백엔드 (다른 터미널, backend 레포)
+# 1. 백엔드 (backend 레포, 가짜 AI 모드)
 docker compose up -d --build
 
 # 2. 대시보드
@@ -43,7 +24,7 @@ pnpm dev            # http://localhost:5173
 
 Vite 개발 서버가 `/api`, `/actuator` 요청을 `http://localhost:8080`(백엔드)으로 넘깁니다. 브라우저 입장에서는 같은 주소라 CORS 설정이 필요 없습니다.
 
-백엔드만 띄우면 앱 안의 가짜 AI(mock)가 요청을 처리합니다. 실제 AI로 보려면 backend의 `AI_MODE=rabbit`과 agent·LLM 레포 서버가 필요합니다(각 레포 README 참고).
+백엔드만 띄우면 앱 안의 가짜 AI(mock)가 요청을 처리합니다. 실제 AI까지 보려면 integration 레포의 `./scripts/up.sh`로 전체 스택을 띄웁니다.
 
 ## 테스트 계정
 
@@ -55,9 +36,7 @@ Vite 개발 서버가 `/api`, `/actuator` 요청을 `http://localhost:8080`(백�
 | 정비팀 | `avi@` `cab@` `ele@` `eng@` `fcs@` `hyd@` `str@` `sys@mro.test` | 배정 큐 (부서별) |
 | 신고자 | `reporter1@kal.test` `reporter1@aar.test` `reporter1@jna.test` (각 `reporter2`도 있음) | 정비 요청 |
 
-현재 시연·평가 입력은 backend 레포 `data/eval/service/scenarios.jsonl`(200건, v2 수리이력 1,600건 기준)을 사용합니다. 각 행의 `tail_number`, `airline_code`, `aircraft_model`, `symptom_text`를 입력하고 `expected` 등 정답 메타데이터는 보내지 않습니다. 결과는 모델 실행에 따라 달라질 수 있습니다. 과거 `data/eval/scenario/scenarios.md`(S01~S23)는 기록용이며 현재 시드의 정답 근거로 재사용하지 않습니다.
-
-LLM2 상태 격리는 AI 내부 변경으로 화면 API·DTO 변경은 없습니다. 통합 실행은 [integration 저장소](https://github.com/mro-agent-proj/integration)가 고정한 조합을 사용합니다.
+시연 입력 예시는 backend 레포 `data/eval/service/scenarios.jsonl`(200건)의 `tail_number`, `airline_code`, `aircraft_model`, `symptom_text`를 쓰면 됩니다. `expected` 등 정답 메타데이터는 보내지 않으며, 결과는 모델 실행에 따라 달라질 수 있습니다.
 
 ## 화면
 
